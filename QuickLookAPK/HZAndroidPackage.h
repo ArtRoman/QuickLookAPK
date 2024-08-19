@@ -12,11 +12,11 @@
 
 @property(nonatomic) NSString *path;
 @property(nonatomic) NSString *name;
-@property(nonatomic) NSString *versionCode;
+@property(nonatomic) NSInteger versionCode;
 @property(nonatomic) NSString *versionName;
 @property(nonatomic) NSString *label;
-@property(nonatomic) NSString *sdkVersion;
-@property(nonatomic) NSString *targetSdkVersion;
+@property(nonatomic) NSInteger sdkVersion;
+@property(nonatomic) NSInteger targetSdkVersion;
 @property(nonatomic) NSString *iconPath;
 @property(nonatomic) NSData *iconData;
 @property(nonatomic) NSArray *permissions;
