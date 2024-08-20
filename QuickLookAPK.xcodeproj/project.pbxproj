@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		30EF6F902C6FCCE3003FF04B /* aapt2 in Resources */ = {isa = PBXBuildFile; fileRef = 30EF6F8F2C6FCCE3003FF04B /* aapt2 */; };
 		E799642E188D34C000BFAA22 /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E799642D188D34C000BFAA22 /* QuickLook.framework */; };
 		E7996430188D34C000BFAA22 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E799642F188D34C000BFAA22 /* ApplicationServices.framework */; };
 		E7996432188D34C000BFAA22 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7996431188D34C000BFAA22 /* CoreServices.framework */; };
@@ -16,13 +17,13 @@
 		E799643E188D34C000BFAA22 /* GeneratePreviewForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = E799643D188D34C000BFAA22 /* GeneratePreviewForURL.m */; };
 		E7996440188D34C000BFAA22 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = E799643F188D34C000BFAA22 /* main.c */; };
 		E7B4ACC9188DC6EC009C713E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7B4ACC8188DC6EC009C713E /* Cocoa.framework */; };
-		E7B4ACCC188DC7F4009C713E /* aapt in Resources */ = {isa = PBXBuildFile; fileRef = E7B4ACCA188DC7F4009C713E /* aapt */; };
-		E7B4AD35188DD058009C713E /* libz.1.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E7B4AD34188DD058009C713E /* libz.1.tbd */; };
 		E7B4AD3A188E7695009C713E /* HZAndroidPackage.h in Headers */ = {isa = PBXBuildFile; fileRef = E7B4AD38188E7695009C713E /* HZAndroidPackage.h */; };
 		E7B4AD3B188E7695009C713E /* HZAndroidPackage.m in Sources */ = {isa = PBXBuildFile; fileRef = E7B4AD39188E7695009C713E /* HZAndroidPackage.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		30C2E6E62C7435A90006DA7C /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		30EF6F8F2C6FCCE3003FF04B /* aapt2 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = aapt2; sourceTree = "<group>"; };
 		E799642A188D34C000BFAA22 /* QuickLookAPK.qlgenerator */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickLookAPK.qlgenerator; sourceTree = BUILT_PRODUCTS_DIR; };
 		E799642D188D34C000BFAA22 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		E799642F188D34C000BFAA22 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
@@ -36,8 +37,6 @@
 		E7996441188D34C000BFAA22 /* QuickLookAPK-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "QuickLookAPK-Prefix.pch"; sourceTree = "<group>"; };
 		E7B4ACC6188DC5F1009C713E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		E7B4ACC8188DC6EC009C713E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		E7B4ACCA188DC7F4009C713E /* aapt */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = aapt; sourceTree = "<group>"; };
-		E7B4AD34188DD058009C713E /* libz.1.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.tbd; path = ../MacOSX.sdk/usr/lib/libz.1.tbd; sourceTree = SDKROOT; };
 		E7B4AD38188E7695009C713E /* HZAndroidPackage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HZAndroidPackage.h; sourceTree = "<group>"; };
 		E7B4AD39188E7695009C713E /* HZAndroidPackage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HZAndroidPackage.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -47,7 +46,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7B4AD35188DD058009C713E /* libz.1.tbd in Frameworks */,
 				E7B4ACC9188DC6EC009C713E /* Cocoa.framework in Frameworks */,
 				E7996434188D34C000BFAA22 /* CoreFoundation.framework in Frameworks */,
 				E799642E188D34C000BFAA22 /* QuickLook.framework in Frameworks */,
@@ -79,7 +77,7 @@
 		E799642C188D34C000BFAA22 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E7B4AD34188DD058009C713E /* libz.1.tbd */,
+				30C2E6E62C7435A90006DA7C /* libz.tbd */,
 				E7B4ACC8188DC6EC009C713E /* Cocoa.framework */,
 				E7B4ACC6188DC5F1009C713E /* Foundation.framework */,
 				E799642D188D34C000BFAA22 /* QuickLook.framework */,
@@ -93,7 +91,7 @@
 		E7996435188D34C000BFAA22 /* QuickLookAPK */ = {
 			isa = PBXGroup;
 			children = (
-				E7B4ACCA188DC7F4009C713E /* aapt */,
+				30EF6F8F2C6FCCE3003FF04B /* aapt2 */,
 				E799643B188D34C000BFAA22 /* GenerateThumbnailForURL.m */,
 				E799643D188D34C000BFAA22 /* GeneratePreviewForURL.m */,
 				E799643F188D34C000BFAA22 /* main.c */,
@@ -136,7 +134,6 @@
 				E7996425188D34C000BFAA22 /* Frameworks */,
 				E7996426188D34C000BFAA22 /* Headers */,
 				E7996427188D34C000BFAA22 /* Resources */,
-				E7996428188D34C000BFAA22 /* Rez */,
 			);
 			buildRules = (
 			);
@@ -157,7 +154,7 @@
 				ORGANIZATIONNAME = "Hezi Cohen";
 			};
 			buildConfigurationList = E7996423188D34C000BFAA22 /* Build configuration list for PBXProject "QuickLookAPK" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -179,22 +176,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7B4ACCC188DC7F4009C713E /* aapt in Resources */,
+				30EF6F902C6FCCE3003FF04B /* aapt2 in Resources */,
 				E799643A188D34C000BFAA22 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXRezBuildPhase section */
-		E7996428188D34C000BFAA22 /* Rez */ = {
-			isa = PBXRezBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXRezBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		E7996424188D34C000BFAA22 /* Sources */ = {
@@ -324,6 +311,7 @@
 		E7996445188D34C000BFAA22 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "QuickLookAPK/QuickLookAPK-Prefix.pch";
@@ -339,6 +327,7 @@
 		E7996446188D34C000BFAA22 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;

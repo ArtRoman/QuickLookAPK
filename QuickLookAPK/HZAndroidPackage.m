@@ -330,7 +330,7 @@ NSDictionary *permissionsMap(void)
     return permissionsMap;
 }
 
-NSString *androidPlatformNameForApiLevel(NSInteger apiLevel)
+NSString *getAndroidPlatformNameForApiLevel(NSInteger apiLevel)
 {
     switch (apiLevel) {
         case 1: return @"Android 1.0";
@@ -367,7 +367,7 @@ NSString *androidPlatformNameForApiLevel(NSInteger apiLevel)
         case 32: return @"Android 12L";
         case 33: return @"Android 13";
         case 34: return @"Android 14";
-        default: return [NSString stringWithFormat:@"Unknown API Level: %ld", (long)apiLevel];
+        default: return @"Unknown";
     }
 }
 
@@ -401,24 +401,34 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     [stringBuilder appendString:@"<head><meta charset='utf-8'><style>body {background: #fff; color: #000; font-family: system-ui, sans-serif;} @media (prefers-color-scheme: dark) { body {background: #323232; color: #fff;} }</style></head>"];
     [stringBuilder appendString:@"<body><h1>"];
     
-    if(package.iconData.length != 0)
+    if (package.iconData.length != 0)
     {
+        if (package.iconType == nil){
+            package.iconType = @"png";
+        }
+        
         NSString *iconBase64 = [package.iconData base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
-        [stringBuilder appendFormat:@"<img style='width: 100px; height: 100px; vertical-align: middle;' title='%@' src='data:image/png;base64,%@'>  ", package.label, iconBase64];
+        [stringBuilder appendFormat:@"<img style='width: 100px; height: 100px; vertical-align: middle;' title='%@' src='data:image/%@;base64,%@'>",
+         package.label, package.iconType, iconBase64];
     }
     
     [stringBuilder appendFormat:@"%@</h1>", package.label];
     [stringBuilder appendFormat:@"<h3>Package name: %@</h3>", package.name];
     [stringBuilder appendFormat:@"<h3>Version: %@ (%ld)</h3>", package.versionName, package.versionCode];
-    [stringBuilder appendFormat:@"<h3>minSdk: %ld (%@)</h3>", package.sdkVersion, androidPlatformNameForApiLevel(package.sdkVersion)];
-    [stringBuilder appendFormat:@"<h3>targetSdk: %ld (%@)</h3>", package.targetSdkVersion, androidPlatformNameForApiLevel(package.targetSdkVersion)];
     
-    if ([package.permissions count] != 0)
+    if (package.sdkVersion > 0){
+        [stringBuilder appendFormat:@"<h3>minSdk: %ld (%@)</h3>", package.sdkVersion, getAndroidPlatformNameForApiLevel(package.sdkVersion)];
+    }
+    
+    if (package.targetSdkVersion > 0) {
+        [stringBuilder appendFormat:@"<h3>targetSdk: %ld (%@)</h3>", package.targetSdkVersion, getAndroidPlatformNameForApiLevel(package.targetSdkVersion)];
+    }
+    
+    if ([package.permissions count] > 0)
     {
         [stringBuilder appendString:@"<h3>Permissions:</h3><ul>"];
         
         NSArray *sortedPermissions = [package.permissions sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
-        
         for (NSString *permission in sortedPermissions)
         {
             NSString *key = [permission stringByReplacingOccurrencesOfString:@"android.permission." withString:@""];
@@ -459,7 +469,7 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
 
 - (void)load
 {
-    NSString *aaptPath = [[[NSBundle bundleWithIdentifier:@"com.hezicohen.qlapk"] resourcePath] stringByAppendingPathComponent:@"aapt"];
+    NSString *aaptPath = [[[NSBundle bundleWithIdentifier:@"com.hezicohen.qlapk"] resourcePath] stringByAppendingPathComponent:@"aapt2"];
     
     NSTask *task = [[NSTask alloc] init];
     [task setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
@@ -477,8 +487,7 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
                                                                            options:NSRegularExpressionCaseInsensitive
                                                                              error:&error];
     
-    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop)
-     {
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.name = [apkString substringWithRange:range];
         range = [result rangeAtIndex:2];
@@ -490,8 +499,7 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     regex = [NSRegularExpression regularExpressionWithPattern:@"sdkVersion:'(.+)'"
                                                       options:0
                                                         error:&error];
-    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop)
-     {
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.sdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
@@ -499,90 +507,138 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     regex = [NSRegularExpression regularExpressionWithPattern:@"targetSdkVersion:'(.+)'"
                                                       options:0
                                                         error:&error];
-    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop)
-     {
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.targetSdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
     
-    regex = [NSRegularExpression regularExpressionWithPattern:@"application: label='(.+)' icon='([^'].+)'"
+    regex = [NSRegularExpression regularExpressionWithPattern:@"application: label='(.+)' icon='([^']+)'"
                                                       options:0
                                                         error:&error];
-    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop)
-     {
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.label = [apkString substringWithRange:range];
         range = [result rangeAtIndex:2];
         self.iconPath = [apkString substringWithRange:range];
     }];
     
-    /*regex = [NSRegularExpression regularExpressionWithPattern:@"application-icon-[\\d]+:'(.+)'"
-                                                      options:0
-                                                        error:&error];
-    NSArray *matches = [regex matchesInString:apkString options:0 range:NSMakeRange(0, apkString.length)];
-    NSTextCheckingResult *result = [matches lastObject];
-    NSRange range = [result rangeAtIndex:1];
-    self.iconPath = [apkString substringWithRange:range];*/
     
-    if ([self.iconPath containsString:@"anydpi-v26"]) {
-        // Icon is vector drawable, try convert res/mipmap-anydpi-v26/ic_launcher.xml -> res/mipmap-xxxhdpi-v4/ic_launcher.png
-        self.iconPath = [self.iconPath stringByReplacingOccurrencesOfString:@".xml" withString:@".png"];
-        NSString *resType = [self.iconPath containsString:@"mipmap"] ? @"mipmap" : @"drawable";
-        
-        self.iconPath = [self.iconPath
-                         stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-anydpi-v26"]
-                         withString:[resType stringByAppendingString:@"-xxxhdpi-v4"]];
-        self.iconData = dataFromZipPath(self.path, self.iconPath);
-        
-        if (self.iconData == nil) {
-            self.iconPath = [self.iconPath
-                             stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-xxxhdpi-v4"]
-                             withString:[resType stringByAppendingString:@"-xxhdpi-v4"]];
-            self.iconData = dataFromZipPath(self.path, self.iconPath);
-        }
-        
-        if (self.iconData == nil) {
-            self.iconPath = [self.iconPath
-                             stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-xxhdpi-v4"]
-                             withString:[resType stringByAppendingString:@"-xhdpi-v4"]];
-            self.iconData = dataFromZipPath(self.path, self.iconPath);
-        }
-        
-        if (self.iconData == nil) {
-            self.iconPath = [self.iconPath
-                             stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-xhdpi-v4"]
-                             withString:[resType stringByAppendingString:@"-hdpi-v4"]];
-            self.iconData = dataFromZipPath(self.path, self.iconPath);
-        }
-        
-        if (self.iconData == nil) {
-            NSTask *task2 = [[NSTask alloc] init];
-            [task2 setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
-            [task2 setArguments:[NSArray arrayWithObjects:@"dump", @"resources", [self path], nil]];
-            
-            NSPipe *readPipe2 = [NSPipe pipe];
-            [task2 setStandardOutput:readPipe2];
-            [task2 launch];
-            
-            NSData *apkData2 = [[readPipe2 fileHandleForReading] readDataToEndOfFile];
-            NSString *apkString2 = [[NSString alloc] initWithData:apkData2 encoding:NSUTF8StringEncoding];
-            
-            regex = [NSRegularExpression regularExpressionWithPattern:@"(anydpi-v26) (file)  type=XML"
-                                                                                   options:NSRegularExpressionCaseInsensitive
-                                                                                     error:&error];
-            */
-        }
-        
-    } else {
+    if (![self.iconPath containsString:@".xml"]) {
+        // Just unpack icon
+        //application: label='App' icon='res/9w.png'
         self.iconData = dataFromZipPath(self.path, self.iconPath);
     }
+    
+    if (self.iconData.length == 0 && [self.iconPath containsString:@"anydpi-v26"]) {
+        // Icon is vector drawable, try convert res/mipmap-anydpi-v26/ic_launcher.xml -> res/mipmap-xxxhdpi-v4/ic_launcher.png
+        NSString *resType = [self.iconPath containsString:@"mipmap"] ? @"mipmap" : @"drawable";
+        NSString *newIconPath = [self.iconPath stringByReplacingOccurrencesOfString:@".xml" withString:@".png"];
+        
+        newIconPath = [self.iconPath
+                       stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-anydpi-v26"]
+                       withString:[resType stringByAppendingString:@"-xxxhdpi-v4"]];
+        self.iconData = dataFromZipPath(self.path, newIconPath);
+        
+        if (self.iconData.length == 0) {
+            newIconPath = [self.iconPath
+                           stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-anydpi-v26"]
+                           withString:[resType stringByAppendingString:@"-xxhdpi-v4"]];
+            self.iconData = dataFromZipPath(self.path, newIconPath);
+        }
+        
+        if (self.iconData.length == 0) {
+            newIconPath = [self.iconPath
+                           stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-anydpi-v26"]
+                           withString:[resType stringByAppendingString:@"-xhdpi-v4"]];
+            self.iconData = dataFromZipPath(self.path, newIconPath);
+        }
+        
+        if (self.iconData.length == 0) {
+            newIconPath = [self.iconPath
+                           stringByReplacingOccurrencesOfString:[resType stringByAppendingString:@"-anydpi-v26"]
+                           withString:[resType stringByAppendingString:@"-hdpi-v4"]];
+            self.iconData = dataFromZipPath(self.path, newIconPath);
+        }
+    }
+    
+    if (self.iconData.length == 0 && [self.iconPath containsString:@".xml"]){
+        /*Decode resources to find iconPath, then take upper line:
+         application: label='App' icon='res/BW.xml'
+        
+         $ aapt2 dump resources APK
+         resource 0x7f0f0000 mipmap/ic_launcher
+           (mdpi) (file) res/mipmap-mdpi-v4/ic_launcher.png type=PNG
+           (hdpi) (file) res/mipmap-hdpi-v4/ic_launcher.png type=PNG
+           (xhdpi) (file) res/mipmap-xhdpi-v4/ic_launcher.png type=PNG
+           (xxhdpi) (file) res/mipmap-xxhdpi-v4/ic_launcher.png type=PNG
+           (xxxhdpi) (file) res/mipmap-xxxhdpi-v4/ic_launcher.png type=PNG
+           (anydpi-v26) (file) res/mipmap-anydpi-v26/ic_launcher.xml type=XML
+         
+         resource 0x7f0f0003 mipmap/ic_launcher
+           (mdpi) (file) res/9w.png type=PNG
+           (hdpi) (file) res/yn.png type=PNG
+           (xhdpi) (file) res/FS.png type=PNG
+           (xxhdpi) (file) res/RJ.png type=PNG
+           (xxxhdpi) (file) res/o-.png type=PNG
+           (anydpi-v26) (file) res/BW.xml type=XML
+         
+         resource 0x7f110000 mipmap/ic_app
+           (mdpi) (file) res/PsP.webp
+           (hdpi) (file) res/tB-.webp
+           (xhdpi) (file) res/dCV.webp
+           (xxhdpi) (file) res/xjy.webp
+           (xxxhdpi) (file) res/QBN.webp
+           (anydpi-v26) (file) res/q1Y.xml type=XML
+        */
+        NSTask *dumpTask = [[NSTask alloc] init];
+        [dumpTask setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
+        [dumpTask setArguments:[NSArray arrayWithObjects:@"dump", @"resources", [self path], nil]];
+        
+        NSTask *grepTask = [[NSTask alloc] init];
+        [grepTask setLaunchPath:@"/usr/bin/grep"];
+        [grepTask setArguments:[NSArray arrayWithObjects:[self iconPath], @"-B", @"1", nil]];
+        
+        NSTask *headTask = [[NSTask alloc] init];
+        [headTask setLaunchPath:@"/usr/bin/head"];
+        [headTask setArguments:[NSArray arrayWithObjects:@"-n", @"1", nil]];
+        
+        NSPipe *dumpAndGrep = [NSPipe pipe];
+        NSPipe *grepAndHeadPipe = [NSPipe pipe];
+        NSPipe *outputPipe = [NSPipe pipe];
+
+        dumpTask.standardOutput = dumpAndGrep;
+        grepTask.standardInput = dumpAndGrep;
+        grepTask.standardOutput = grepAndHeadPipe;
+        headTask.standardInput = grepAndHeadPipe;
+        headTask.standardOutput = outputPipe;
+
+        [dumpTask launch];
+        [grepTask launch];
+        [headTask launch];
+        
+        NSData *dumpData = [[outputPipe fileHandleForReading] readDataToEndOfFile];
+        NSString *dumpString = [[NSString alloc] initWithData:dumpData encoding:NSUTF8StringEncoding];
+        
+        regex = [NSRegularExpression regularExpressionWithPattern:@"(?s)\\(file\\) ([^\\s]+)"// type=PNG"
+                                                          options:0
+                                                            error:&error];
+        [regex enumerateMatchesInString:dumpString options:0 range:NSMakeRange(0, dumpString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
+            NSRange range = [result rangeAtIndex:1];
+            NSString *newIconPath = [dumpString substringWithRange:range];
+            self.iconData = dataFromZipPath(self.path, newIconPath);
+            
+            if ([newIconPath containsString:@"webp"]) {
+                self.iconType = @"webp";
+            }
+        }];
+    }
+    
     
     regex = [NSRegularExpression regularExpressionWithPattern:@"uses-permission: name='([^\\v\\h]+)'"
                                                       options:0
                                                         error:&error];
     NSMutableArray *permissions = [NSMutableArray array];
-    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop)
-     {
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         NSString *permission = [apkString substringWithRange:range];
         [permissions addObject:permission];

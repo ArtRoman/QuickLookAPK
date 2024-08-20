@@ -19,6 +19,7 @@
 @property(nonatomic) NSInteger targetSdkVersion;
 @property(nonatomic) NSString *iconPath;
 @property(nonatomic) NSData *iconData;
+@property(nonatomic) NSString *iconType;
 @property(nonatomic) NSArray *permissions;
 
 + (instancetype)packageWithPath:(NSString *)path;
