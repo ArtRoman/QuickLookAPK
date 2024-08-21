@@ -15,13 +15,15 @@
 @property(nonatomic) NSInteger versionCode;
 @property(nonatomic) NSString *versionName;
 @property(nonatomic) NSString *label;
-@property(nonatomic) NSInteger sdkVersion;
+@property(nonatomic) NSInteger minSdkVersion;
 @property(nonatomic) NSInteger targetSdkVersion;
+@property(nonatomic) NSInteger maxSdkVersion;
 @property(nonatomic) NSString *iconPath;
 @property(nonatomic) NSString *iconType;
 @property(nonatomic) NSString *iconResourceId;
 @property(nonatomic) NSData *iconData;
 @property(nonatomic) NSArray *permissions;
+@property(nonatomic) NSString *nativeLibraries;
 
 + (instancetype)packageWithPath:(NSString *)path;
 

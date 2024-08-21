@@ -403,12 +403,8 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     
     if (package.iconData.length != 0)
     {
-        if (package.iconType == nil){
-            package.iconType = @"png";
-        }
-        
         NSString *iconBase64 = [package.iconData base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength];
-        [stringBuilder appendFormat:@"<img style='width: 100px; height: 100px; vertical-align: middle;' title='%@' src='data:image/%@;base64,%@'>",
+        [stringBuilder appendFormat:@"<img style='width: 100px; height: 100px; vertical-align: middle;' title='%@' src='data:%@;base64,%@'>",
          package.label, package.iconType, iconBase64];
     }
     
@@ -416,12 +412,20 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     [stringBuilder appendFormat:@"<h3>Package name: %@</h3>", package.name];
     [stringBuilder appendFormat:@"<h3>Version: %@ (%ld)</h3>", package.versionName, package.versionCode];
     
-    if (package.sdkVersion > 0){
-        [stringBuilder appendFormat:@"<h3>minSdk: %ld (%@)</h3>", package.sdkVersion, getAndroidPlatformNameForApiLevel(package.sdkVersion)];
+    if (package.targetSdkVersion > 0) {
+        [stringBuilder appendFormat:@"<h3>Target SDK: %ld (%@)</h3>", package.targetSdkVersion, getAndroidPlatformNameForApiLevel(package.targetSdkVersion)];
     }
     
-    if (package.targetSdkVersion > 0) {
-        [stringBuilder appendFormat:@"<h3>targetSdk: %ld (%@)</h3>", package.targetSdkVersion, getAndroidPlatformNameForApiLevel(package.targetSdkVersion)];
+    if (package.minSdkVersion > 0){
+        [stringBuilder appendFormat:@"<h3>Min SDK: %ld (%@)</h3>", package.minSdkVersion, getAndroidPlatformNameForApiLevel(package.minSdkVersion)];
+    }
+    
+    if (package.maxSdkVersion > 0){
+        [stringBuilder appendFormat:@"<h3>Max SDK: %ld (%@)</h3>", package.maxSdkVersion, getAndroidPlatformNameForApiLevel(package.maxSdkVersion)];
+    }
+    
+    if (package.nativeLibraries != nil) {
+        [stringBuilder appendFormat:@"<h3>Native libraries: %@</h3>", package.nativeLibraries];
     }
     
     if ([package.permissions count] > 0)
@@ -498,13 +502,19 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     regex = [NSRegularExpression regularExpressionWithPattern:@"sdkVersion:'(.+)'" options:0 error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
-        self.sdkVersion = [[apkString substringWithRange:range] integerValue];
+        self.minSdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
     
     regex = [NSRegularExpression regularExpressionWithPattern:@"targetSdkVersion:'(.+)'" options:0 error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.targetSdkVersion = [[apkString substringWithRange:range] integerValue];
+    }];
+    
+    regex = [NSRegularExpression regularExpressionWithPattern:@"maxSdkVersion:'(.+)'" options:0 error:&error];
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
+        NSRange range = [result rangeAtIndex:1];
+        self.maxSdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
     
     regex = [NSRegularExpression regularExpressionWithPattern:@"application: label='(.+)' icon='([^']+)'" options:0 error:&error];
@@ -515,7 +525,14 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
         self.iconPath = [apkString substringWithRange:range];
     }];
     
+    // Use last param application-icon- for best quality
+    regex = [NSRegularExpression regularExpressionWithPattern:@"application-icon-[\\d]+:'(.+)'" options:0 error:&error];
+    NSArray *matches = [regex matchesInString:apkString options:0 range:NSMakeRange(0, apkString.length)];
+    NSTextCheckingResult *result = [matches lastObject];
+    NSRange range = [result rangeAtIndex:1];
+    self.iconPath = [apkString substringWithRange:range];
     
+
     if (![self.iconPath containsString:@".xml"]) {
         // Just unpack icon
         //application: label='App' icon='res/9w.png'
@@ -555,44 +572,24 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     }
     
     if (self.iconData.length == 0 && [self.iconPath containsString:@".xml"]){
-        /* Decode resources, search for icon name and take resource ID from previous line
-         $ aapt dump --values resources test3.apk
+        /* APK is obfuscated, get resource ID of the icon by its path:
+         $ aapt dump --values resources test.apk
                  resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000914 (s=0x0008 r=0x00)
                    (string8) "res/BW.xml"
         */
-        NSTask *dumpTask = [[NSTask alloc] init];
-        [dumpTask setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
-        [dumpTask setArguments:[NSArray arrayWithObjects:@"dump", @"--values", @"resources", [self path], nil]];
+        NSString *iconResGrepResult = grepResources(self, self.iconPath, @"-B1");
         
-        NSPipe *outputPipe = [NSPipe pipe];
-        dumpTask.standardOutput = outputPipe;
-
-        [dumpTask launch];
+        NSError *error = nil;
+        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"resource (0[xX][0-9a-fA-F]+)" options:0 error:&error];
+        NSArray* matches = [regex matchesInString:iconResGrepResult options:0 range:NSMakeRange(0, iconResGrepResult.length)];
         
-        NSData *dumpData = [[outputPipe fileHandleForReading] readDataToEndOfFile];
-        NSString *dumpString = [[NSString alloc] initWithData:dumpData encoding:NSUTF8StringEncoding];
-        
-        NSArray<NSString *> *lines = [dumpString componentsSeparatedByString:@"\n"];
-        NSString *previousLine = nil;
-        NSString *resourceIdLine = nil;
-        
-        for (NSString *line in lines) {
-            if ([line containsString:[self iconPath]]) {
-                if (previousLine) {
-                    resourceIdLine = previousLine;
-                    break;
-                }
-            }
-            previousLine = line;
+        for (NSTextCheckingResult* match in matches) {
+            NSRange group1 = [match rangeAtIndex:1];
+            self.iconResourceId = [iconResGrepResult substringWithRange:group1];
+            break;
         }
         
-        regex = [NSRegularExpression regularExpressionWithPattern:@"resource (0[xX][0-9a-fA-F]+)" options:0 error:&error];
-        [regex enumerateMatchesInString:resourceIdLine options:0 range:NSMakeRange(0, resourceIdLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
-            NSRange range = [result rangeAtIndex:1];
-            self.iconResourceId = [resourceIdLine substringWithRange:range];
-        }];
-        
-        /* Then search for this resource ID to get real resource name in next line, take the last one, ignore XML:
+        /* Then search for real icon paths by its resource ID, use the last bitmap icon:
                  resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x000005b7 (s=0x0008 r=0x00)
                    (string8) "res/RJ.png"
                  resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000698 (s=0x0008 r=0x00)
@@ -600,30 +597,29 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
                  resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000914 (s=0x0008 r=0x00)
                    (string8) "res/BW.xml"
          */
-        NSString *iconLine;
-        
-        for (NSString *line in lines) {
-            if (previousLine) {
-                if ([previousLine containsString:[self iconResourceId]]) {
-                    if ([line containsString:@".xml"]){
-                        break;
-                    }
-                    iconLine = line;
-                }
-            }
-            previousLine = line;
-        }
+        NSString *iconPathGrepResult = grepResources(self, self.iconResourceId, @"-A1");
         
         regex = [NSRegularExpression regularExpressionWithPattern:@".*? \"(.+)\"" options:0 error:&error];
-        [regex enumerateMatchesInString:iconLine options:0 range:NSMakeRange(0, iconLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
-            NSRange range = [result rangeAtIndex:1];
-            NSString *newIconPath = [iconLine substringWithRange:range];
-            self.iconData = dataFromZipPath(self.path, newIconPath);
+        matches = [regex matchesInString:iconPathGrepResult options:0 range:NSMakeRange(0, iconPathGrepResult.length)];
+        
+        for (NSTextCheckingResult* match in matches) {
+            NSRange group1 = [match rangeAtIndex:1];
+            NSString *result = [iconPathGrepResult substringWithRange:group1];
             
-            if ([newIconPath containsString:@".webp"]){
-                self.iconType = @"webp";
+            if (![result containsString:@".xml"]) {
+                self.iconPath = [iconPathGrepResult substringWithRange:group1];
             }
-        }];
+        }
+        
+        self.iconData = dataFromZipPath(self.path, self.iconPath);
+        
+        if ([self.iconPath containsString:@".webp"]){
+            self.iconType = @"image/webp";
+        } else if ([self.iconPath containsString:@".jpg"]){
+            self.iconType = @"image/jpeg";
+        } else {
+            self.iconType = @"image/png";
+        }
     }
     
     
@@ -636,6 +632,38 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     }];
     
     self.permissions = permissions;
+    
+    regex = [NSRegularExpression regularExpressionWithPattern:@"native-code: (.+)" options:0 error:&error];
+    [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
+        NSRange range = [result rangeAtIndex:1];
+        self.nativeLibraries = [apkString substringWithRange:range];
+    }];
+}
+
+NSString *grepResources(HZAndroidPackage *package, NSString *grepWhat, NSString *grepParam){
+    NSString *aaptPath = [[[NSBundle bundleWithIdentifier:@"com.hezicohen.qlapk"] resourcePath] stringByAppendingPathComponent:@"aapt"];
+    
+    NSTask *dumpTask = [[NSTask alloc] init];
+    [dumpTask setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
+    [dumpTask setArguments:[NSArray arrayWithObjects:@"dump", @"--values", @"resources", package.path, nil]];
+    
+    NSTask *grepTask = [[NSTask alloc] init];
+    [grepTask setLaunchPath:@"/usr/bin/grep"];
+    [grepTask setArguments:[NSArray arrayWithObjects:grepWhat, grepParam, nil]];
+    
+    NSPipe *dumpAndGrep = [NSPipe pipe];
+    NSPipe *outputPipe = [NSPipe pipe];
+    
+    dumpTask.standardOutput = dumpAndGrep;
+    grepTask.standardInput = dumpAndGrep;
+    grepTask.standardOutput = outputPipe;
+    
+    [dumpTask launch];
+    [grepTask launch];
+    
+    NSData *dumpData = [[outputPipe fileHandleForReading] readDataToEndOfFile];
+    NSString *dumpString = [[NSString alloc] initWithData:dumpData encoding:NSUTF8StringEncoding];
+    return dumpString;
 }
 
 @end
