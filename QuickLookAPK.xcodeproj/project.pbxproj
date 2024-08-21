@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		30EF6F902C6FCCE3003FF04B /* aapt2 in Resources */ = {isa = PBXBuildFile; fileRef = 30EF6F8F2C6FCCE3003FF04B /* aapt2 */; };
+		30A749552C7657BF00265C29 /* aapt in Resources */ = {isa = PBXBuildFile; fileRef = 30A749542C7657BF00265C29 /* aapt */; };
 		E799642E188D34C000BFAA22 /* QuickLook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E799642D188D34C000BFAA22 /* QuickLook.framework */; };
 		E7996430188D34C000BFAA22 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E799642F188D34C000BFAA22 /* ApplicationServices.framework */; };
 		E7996432188D34C000BFAA22 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7996431188D34C000BFAA22 /* CoreServices.framework */; };
@@ -22,8 +22,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		30A749542C7657BF00265C29 /* aapt */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = aapt; sourceTree = "<group>"; };
 		30C2E6E62C7435A90006DA7C /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
-		30EF6F8F2C6FCCE3003FF04B /* aapt2 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = aapt2; sourceTree = "<group>"; };
 		E799642A188D34C000BFAA22 /* QuickLookAPK.qlgenerator */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuickLookAPK.qlgenerator; sourceTree = BUILT_PRODUCTS_DIR; };
 		E799642D188D34C000BFAA22 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		E799642F188D34C000BFAA22 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
@@ -91,7 +91,7 @@
 		E7996435188D34C000BFAA22 /* QuickLookAPK */ = {
 			isa = PBXGroup;
 			children = (
-				30EF6F8F2C6FCCE3003FF04B /* aapt2 */,
+				30A749542C7657BF00265C29 /* aapt */,
 				E799643B188D34C000BFAA22 /* GenerateThumbnailForURL.m */,
 				E799643D188D34C000BFAA22 /* GeneratePreviewForURL.m */,
 				E799643F188D34C000BFAA22 /* main.c */,
@@ -176,8 +176,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				30EF6F902C6FCCE3003FF04B /* aapt2 in Resources */,
 				E799643A188D34C000BFAA22 /* InfoPlist.strings in Resources */,
+				30A749552C7657BF00265C29 /* aapt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

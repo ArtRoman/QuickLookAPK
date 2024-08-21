@@ -469,7 +469,7 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
 
 - (void)load
 {
-    NSString *aaptPath = [[[NSBundle bundleWithIdentifier:@"com.hezicohen.qlapk"] resourcePath] stringByAppendingPathComponent:@"aapt2"];
+    NSString *aaptPath = [[[NSBundle bundleWithIdentifier:@"com.hezicohen.qlapk"] resourcePath] stringByAppendingPathComponent:@"aapt"];
     
     NSTask *task = [[NSTask alloc] init];
     [task setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
@@ -483,10 +483,9 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     NSString *apkString = [[NSString alloc] initWithData:apkData encoding:NSUTF8StringEncoding];
     
     NSError *error = nil;
-    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"package: name='(.+)' versionCode='(.+)' versionName='([^']+)'"
-                                                                           options:NSRegularExpressionCaseInsensitive
-                                                                             error:&error];
+    NSRegularExpression *regex;
     
+    regex = [NSRegularExpression regularExpressionWithPattern:@"package: name='(.+)' versionCode='(.+)' versionName='([^']+)'" options:NSRegularExpressionCaseInsensitive error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.name = [apkString substringWithRange:range];
@@ -496,25 +495,19 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
         self.versionName = [apkString substringWithRange:range];
     }];
     
-    regex = [NSRegularExpression regularExpressionWithPattern:@"sdkVersion:'(.+)'"
-                                                      options:0
-                                                        error:&error];
+    regex = [NSRegularExpression regularExpressionWithPattern:@"sdkVersion:'(.+)'" options:0 error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.sdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
     
-    regex = [NSRegularExpression regularExpressionWithPattern:@"targetSdkVersion:'(.+)'"
-                                                      options:0
-                                                        error:&error];
+    regex = [NSRegularExpression regularExpressionWithPattern:@"targetSdkVersion:'(.+)'" options:0 error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.targetSdkVersion = [[apkString substringWithRange:range] integerValue];
     }];
     
-    regex = [NSRegularExpression regularExpressionWithPattern:@"application: label='(.+)' icon='([^']+)'"
-                                                      options:0
-                                                        error:&error];
+    regex = [NSRegularExpression regularExpressionWithPattern:@"application: label='(.+)' icon='([^']+)'" options:0 error:&error];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
         self.label = [apkString substringWithRange:range];
@@ -562,81 +555,79 @@ NSString *androidPackageHTMLPreview(HZAndroidPackage *package)
     }
     
     if (self.iconData.length == 0 && [self.iconPath containsString:@".xml"]){
-        /*Decode resources to find iconPath, then take upper line:
-         application: label='App' icon='res/BW.xml'
-        
-         $ aapt2 dump resources APK
-         resource 0x7f0f0000 mipmap/ic_launcher
-           (mdpi) (file) res/mipmap-mdpi-v4/ic_launcher.png type=PNG
-           (hdpi) (file) res/mipmap-hdpi-v4/ic_launcher.png type=PNG
-           (xhdpi) (file) res/mipmap-xhdpi-v4/ic_launcher.png type=PNG
-           (xxhdpi) (file) res/mipmap-xxhdpi-v4/ic_launcher.png type=PNG
-           (xxxhdpi) (file) res/mipmap-xxxhdpi-v4/ic_launcher.png type=PNG
-           (anydpi-v26) (file) res/mipmap-anydpi-v26/ic_launcher.xml type=XML
-         
-         resource 0x7f0f0003 mipmap/ic_launcher
-           (mdpi) (file) res/9w.png type=PNG
-           (hdpi) (file) res/yn.png type=PNG
-           (xhdpi) (file) res/FS.png type=PNG
-           (xxhdpi) (file) res/RJ.png type=PNG
-           (xxxhdpi) (file) res/o-.png type=PNG
-           (anydpi-v26) (file) res/BW.xml type=XML
-         
-         resource 0x7f110000 mipmap/ic_app
-           (mdpi) (file) res/PsP.webp
-           (hdpi) (file) res/tB-.webp
-           (xhdpi) (file) res/dCV.webp
-           (xxhdpi) (file) res/xjy.webp
-           (xxxhdpi) (file) res/QBN.webp
-           (anydpi-v26) (file) res/q1Y.xml type=XML
+        /* Decode resources, search for icon name and take resource ID from previous line
+         $ aapt dump --values resources test3.apk
+                 resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000914 (s=0x0008 r=0x00)
+                   (string8) "res/BW.xml"
         */
         NSTask *dumpTask = [[NSTask alloc] init];
         [dumpTask setLaunchPath:[aaptPath stringByExpandingTildeInPath]];
-        [dumpTask setArguments:[NSArray arrayWithObjects:@"dump", @"resources", [self path], nil]];
+        [dumpTask setArguments:[NSArray arrayWithObjects:@"dump", @"--values", @"resources", [self path], nil]];
         
-        NSTask *grepTask = [[NSTask alloc] init];
-        [grepTask setLaunchPath:@"/usr/bin/grep"];
-        [grepTask setArguments:[NSArray arrayWithObjects:[self iconPath], @"-B", @"1", nil]];
-        
-        NSTask *headTask = [[NSTask alloc] init];
-        [headTask setLaunchPath:@"/usr/bin/head"];
-        [headTask setArguments:[NSArray arrayWithObjects:@"-n", @"1", nil]];
-        
-        NSPipe *dumpAndGrep = [NSPipe pipe];
-        NSPipe *grepAndHeadPipe = [NSPipe pipe];
         NSPipe *outputPipe = [NSPipe pipe];
-
-        dumpTask.standardOutput = dumpAndGrep;
-        grepTask.standardInput = dumpAndGrep;
-        grepTask.standardOutput = grepAndHeadPipe;
-        headTask.standardInput = grepAndHeadPipe;
-        headTask.standardOutput = outputPipe;
+        dumpTask.standardOutput = outputPipe;
 
         [dumpTask launch];
-        [grepTask launch];
-        [headTask launch];
         
         NSData *dumpData = [[outputPipe fileHandleForReading] readDataToEndOfFile];
         NSString *dumpString = [[NSString alloc] initWithData:dumpData encoding:NSUTF8StringEncoding];
         
-        regex = [NSRegularExpression regularExpressionWithPattern:@"(?s)\\(file\\) ([^\\s]+)"// type=PNG"
-                                                          options:0
-                                                            error:&error];
-        [regex enumerateMatchesInString:dumpString options:0 range:NSMakeRange(0, dumpString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
+        NSArray<NSString *> *lines = [dumpString componentsSeparatedByString:@"\n"];
+        NSString *previousLine = nil;
+        NSString *resourceIdLine = nil;
+        
+        for (NSString *line in lines) {
+            if ([line containsString:[self iconPath]]) {
+                if (previousLine) {
+                    resourceIdLine = previousLine;
+                    break;
+                }
+            }
+            previousLine = line;
+        }
+        
+        regex = [NSRegularExpression regularExpressionWithPattern:@"resource (0[xX][0-9a-fA-F]+)" options:0 error:&error];
+        [regex enumerateMatchesInString:resourceIdLine options:0 range:NSMakeRange(0, resourceIdLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
             NSRange range = [result rangeAtIndex:1];
-            NSString *newIconPath = [dumpString substringWithRange:range];
+            self.iconResourceId = [resourceIdLine substringWithRange:range];
+        }];
+        
+        /* Then search for this resource ID to get real resource name in next line, take the last one, ignore XML:
+                 resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x000005b7 (s=0x0008 r=0x00)
+                   (string8) "res/RJ.png"
+                 resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000698 (s=0x0008 r=0x00)
+                   (string8) "res/o-.png"
+                 resource 0x7f0f0003 com.package:mipmap/ic_launcher: t=0x03 d=0x00000914 (s=0x0008 r=0x00)
+                   (string8) "res/BW.xml"
+         */
+        NSString *iconLine;
+        
+        for (NSString *line in lines) {
+            if (previousLine) {
+                if ([previousLine containsString:[self iconResourceId]]) {
+                    if ([line containsString:@".xml"]){
+                        break;
+                    }
+                    iconLine = line;
+                }
+            }
+            previousLine = line;
+        }
+        
+        regex = [NSRegularExpression regularExpressionWithPattern:@".*? \"(.+)\"" options:0 error:&error];
+        [regex enumerateMatchesInString:iconLine options:0 range:NSMakeRange(0, iconLine.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
+            NSRange range = [result rangeAtIndex:1];
+            NSString *newIconPath = [iconLine substringWithRange:range];
             self.iconData = dataFromZipPath(self.path, newIconPath);
             
-            if ([newIconPath containsString:@"webp"]) {
+            if ([newIconPath containsString:@".webp"]){
                 self.iconType = @"webp";
             }
         }];
     }
     
     
-    regex = [NSRegularExpression regularExpressionWithPattern:@"uses-permission: name='([^\\v\\h]+)'"
-                                                      options:0
-                                                        error:&error];
+    regex = [NSRegularExpression regularExpressionWithPattern:@"uses-permission: name='([^\\v\\h]+)'" options:0 error:&error];
     NSMutableArray *permissions = [NSMutableArray array];
     [regex enumerateMatchesInString:apkString options:0 range:NSMakeRange(0, apkString.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop){
         NSRange range = [result rangeAtIndex:1];
