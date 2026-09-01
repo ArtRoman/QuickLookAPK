@@ -506,6 +506,19 @@ func androidPackageHTMLPreview(_ package: AndroidPackage) -> String {
         html += "</ul>"
     }
 
+    // The Quick Look host's native copy: responder chain doesn't reach the
+    // WebKit editing commands, producing a beep on Cmd-C. WebKit still
+    // dispatches the DOM keydown event first, so intercept Cmd-C there and
+    // perform the copy ourselves.
+    html += "<script>document.addEventListener('keydown', function(e) {"
+    html += "if (!(e.metaKey && (e.key === 'c' || e.key === 'C'))) { return; }"
+    html += "var selection = window.getSelection();"
+    html += "if (selection && selection.toString().length > 0) {"
+    html += "try { document.execCommand('copy'); } catch (err) {}"
+    html += "}"
+    html += "e.preventDefault();"
+    html += "});</script>"
+
     html += "</body></html>"
     return html
 }
