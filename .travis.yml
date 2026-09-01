@@ -1,3 +1,0 @@
-language: objective-c
-xcode_project: QuickLookAPK.xcodeproj
-xcode_scheme: QuickLookAPK
